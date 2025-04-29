@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Mon Portfolio</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #eef;
+    }
+    canvas {
+      display: block;
+      background: #eef;
+    }
+    #instructions {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255,255,255,0.8);
+      padding: 10px;
+      border-radius: 8px;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="instructions">
+  ➡️ Flèches pour bouger<br>
+  🔲 Espace dans "Télécharger" ➔ Télécharger CV<br>
+  🛑 Espace dans "Exit" ➔ Retour accueil
+</div>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // Joueur
+  const player = {
+    x: 1000,
+    y: 1000,
+    width: 40,
+    height: 40,
+    color: 'blue',
+    speed: 7
+  };
+
+  // Zone Exit
+  const exitZone = {
+    x: 300,
+    y: 500,
+    width: 200,
+    height: 80,
+    color: 'red',
+    text: 'Exit'
+  };
+
+  // Zone Télécharger
+  const downloadZone = {
+    x: 1400,
+    y: 500,
+    width: 250,
+    height: 80,
+    color: 'lightgreen',
+    text: 'Télécharger CV',
+    fileName: 'CV_ELLIOT.zip' // Ton fichier ZIP
+  };
+
+  // Zone CV
+  const cvZone = {
+    x: 600,
+    y: 500,
+    width: 600,
+    height: 800,
+    color: 'lightblue',
+    imageSrc: 'ELLIOT PAUL.png' // Ton image de CV
+  };
+
+  const keys = {};
+  window.addEventListener('keydown', function(e) {
+    keys[e.key] = true;
+    if (e.key === " ") {
+      checkZones();
+    }
+  });
+  window.addEventListener('keyup', function(e) {
+    keys[e.key] = false;
+  });
+
+  const cvImage = new Image();
+  cvImage.src = cvZone.imageSrc;
+  cvImage.onload = function() {
+    gameLoop();
+  };
+
+  // Camera
+  let camera = {
+    x: 0,
+    y: 0,
+    width: canvas.width,
+    height: canvas.height
+  };
+
+  const terrainWidth = 2000;
+  const terrainHeight = 2000;
+
+  function update() {
+    if (keys['ArrowRight']) player.x += player.speed;
+    if (keys['ArrowLeft']) player.x -= player.speed;
+    if (keys['ArrowUp']) player.y -= player.speed;
+    if (keys['ArrowDown']) player.y += player.speed;
+
+    // Caméra suit le joueur
+    camera.x = player.x - camera.width / 2;
+    camera.y = player.y - camera.height / 2;
+
+    // Bordures
+    if (camera.x < 0) camera.x = 0;
+    if (camera.y < 0) camera.y = 0;
+    if (camera.x + camera.width > terrainWidth) camera.x = terrainWidth - camera.width;
+    if (camera.y + camera.height > terrainHeight) camera.y = terrainHeight - camera.height;
+
+    // Téléportation joueur
+    if (player.x > terrainWidth) player.x = 0;
+    if (player.x + player.width < 0) player.x = terrainWidth - player.width;
+    if (player.y > terrainHeight) player.y = 0;
+    if (player.y + player.height < 0) player.y = terrainHeight - player.height;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(-camera.x, -camera.y);
+
+    // Zone Exit
+    ctx.fillStyle = exitZone.color;
+    ctx.fillRect(exitZone.x, exitZone.y, exitZone.width, exitZone.height);
+    ctx.fillStyle = 'white';
+    ctx.font = '24px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(exitZone.text, exitZone.x + exitZone.width/2, exitZone.y + exitZone.height/2);
+
+    // Zone Télécharger
+    ctx.fillStyle = downloadZone.color;
+    ctx.fillRect(downloadZone.x, downloadZone.y, downloadZone.width, downloadZone.height);
+    ctx.fillStyle = 'black';
+    ctx.fillText(downloadZone.text, downloadZone.x + downloadZone.width/2, downloadZone.y + downloadZone.height/2);
+
+    // Zone CV
+    ctx.fillStyle = cvZone.color;
+    ctx.fillRect(cvZone.x, cvZone.y, cvZone.width, cvZone.height);
+    ctx.drawImage(cvImage, cvZone.x + 10, cvZone.y + 10, cvZone.width - 20, cvZone.height - 20);
+
+    // Joueur
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+
+    ctx.restore();
+  }
+
+  function checkZones() {
+    if (isColliding(player, exitZone)) {
+      window.location.href = "index.html"; // Redirige vers la page d'accueil (remplacer par ton URL)
+    } else if (isColliding(player, downloadZone)) {
+      downloadFile();
+    }
+  }
+
+  function isColliding(a, b) {
+    return a.x + a.width > b.x &&
+           a.x < b.x + b.width &&
+           a.y + a.height > b.y &&
+           a.y < b.y + b.height;
+  }
+
+  function downloadFile() {
+    const link = document.createElement('a');
+    link.href = downloadZone.fileName; // Le fichier à télécharger
+    link.download = downloadZone.fileName;
+    link.click();
+  }
+
+  function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+</script>
+
+</body>
+</html>

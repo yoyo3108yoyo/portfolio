@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lettre de Motivation</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #eef;
+      font-family: Arial, sans-serif;
+    }
+    #instructions {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 16px;
+      z-index: 10;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="instructions">
+  <strong>Contrôles :</strong><br>
+  ➡️ Flèches pour se déplacer<br>
+  🔲 Appuyer sur "Espace" sur Exit pour retourner à l'accueil.
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Dimensions du monde
+const worldWidth = 2000;
+const worldHeight = 2000;
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// Joueur
+const player = {
+  x: worldWidth / 2,
+  y: worldHeight / 2,
+  width: 40,
+  height: 40,
+  color: 'blue',
+  speed: 7
+};
+
+// Zones interactives
+const zones = [
+  {
+    x: 1700,
+    y: 200,
+    width: 150,
+    height: 80,
+    color: 'lightgreen',
+    text: 'Exit',
+    link: 'index.html'
+  }
+];
+
+// Zone de texte
+const textZone = {
+  x: 500,
+  y: 500,
+  width: 900,    // largeur OK
+  height: 1000,  // 🡆 hauteur augmentée pour tout contenir
+  color: 'lightyellow',
+  text: `Madame, Monsieur,\n
+Actuellement étudiant en BUT 1ère année,\n
+je poursuis mon objectif de devenir ingénieur.\n
+\n
+Depuis mon plus jeune âge, je suis passionné\n
+par les nouvelles technologies et la programmation.\n
+Mon parcours en STI2D puis en BUT m'a permis d'acquérir\n
+des bases solides en électronique, programmation, et gestion de projet.\n
+\n
+Intégrer votre entreprise ou programme représente pour moi\n
+une opportunité d'appliquer mes compétences,\n
+de relever de nouveaux défis,\n
+et de continuer à apprendre au contact de professionnels expérimentés.\n
+\n
+Motivé, sérieux et déterminé,\n
+je suis prêt à m'investir pleinement\n
+pour atteindre mes objectifs professionnels.\n
+\n
+Cordialement,\n
+PAUL Elliot`
+};
+
+const keys = {};
+
+window.addEventListener('keydown', (e) => {
+  keys[e.key] = true;
+  if (e.key === ' ') {
+    checkZoneCollision();
+  }
+});
+
+window.addEventListener('keyup', (e) => {
+  keys[e.key] = false;
+});
+
+function update() {
+  if (keys['ArrowRight']) player.x += player.speed;
+  if (keys['ArrowLeft']) player.x -= player.speed;
+  if (keys['ArrowUp']) player.y -= player.speed;
+  if (keys['ArrowDown']) player.y += player.speed;
+
+  // Boucles aux bords
+  if (player.x > worldWidth) player.x = 0;
+  if (player.x < 0) player.x = worldWidth;
+  if (player.y > worldHeight) player.y = 0;
+  if (player.y < 0) player.y = worldHeight;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Décalage caméra
+  const offsetX = player.x - canvas.width / 2;
+  const offsetY = player.y - canvas.height / 2;
+
+  // Zone de texte
+  ctx.fillStyle = textZone.color;
+  ctx.fillRect(textZone.x - offsetX, textZone.y - offsetY, textZone.width, textZone.height);
+
+// Texte dans la zone
+ctx.fillStyle = 'black';
+ctx.font = '18px Arial';
+ctx.textAlign = 'left';
+ctx.textBaseline = 'top';
+
+const margin = 20;
+const lineHeight = 24; // 🡆 espace entre les lignes réduit
+
+const textLines = textZone.text.split('\n');
+textLines.forEach((line, i) => {
+  ctx.fillText(
+    line.trim(),
+    textZone.x + margin - offsetX,
+    textZone.y + margin + i * lineHeight - offsetY
+  );
+});
+
+  // Zones (exit)
+  zones.forEach(zone => {
+    ctx.fillStyle = zone.color;
+    ctx.fillRect(zone.x - offsetX, zone.y - offsetY, zone.width, zone.height);
+
+    ctx.fillStyle = 'black';
+    ctx.font = '22px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(zone.text, zone.x + zone.width/2 - offsetX, zone.y + zone.height/2 - offsetY);
+  });
+
+  // Joueur toujours au centre de l'écran
+  ctx.fillStyle = player.color;
+  ctx.fillRect(canvas.width / 2 - player.width / 2, canvas.height / 2 - player.height / 2, player.width, player.height);
+}
+
+function checkZoneCollision() {
+  zones.forEach(zone => {
+    if (
+      player.x + player.width > zone.x &&
+      player.x < zone.x + zone.width &&
+      player.y + player.height > zone.y &&
+      player.y < zone.y + zone.height
+    ) {
+      window.location.href = zone.link;
+    }
+  });
+}
+
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+</script>
+
+</body>
+</html>

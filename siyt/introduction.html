@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Introduction - Portfolio</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #eef;
+      font-family: Arial, sans-serif;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    #instructions {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+  </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="instructions">
+  <strong>Contrôles :</strong><br>
+  ➡️ Flèches pour se déplacer<br>
+  🔲 Appuyez sur "Espace" dans la zone Exit pour revenir à la page principale.
+</div>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // Ajuste la taille du canvas pour qu'il prenne tout l'écran
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // Dimensions du monde
+  const worldWidth = 2000;
+  const worldHeight = 1000;
+
+  // Joueur (personnage)
+  const player = {
+    x: worldWidth / 2,
+    y: worldHeight / 2,
+    width: 40,
+    height: 40,
+    color: 'blue',
+    speed: 7
+  };
+
+  // Zone d'interaction "Exit"
+  const exitZone = {
+    x: 1500,
+    y: 100,
+    width: 200,
+    height: 100,
+    color: 'lightgreen',
+    text: 'Exit',
+    link: 'index.html' // Redirection vers la page principale
+  };
+
+  // Zone de texte long (ajout du texte)
+  const textZone = {
+    x: 200,
+    y: 300,
+    width: 800,  // Agrandi la largeur du rectangle
+    height: 250,  // Augmenté la hauteur pour contenir tout le texte
+    color: 'lightblue',
+    text: "Ma vie a commencé dans la Silicon Valley, où je suis né.\n" +
+          "J’ai passé peu de temps aux États-Unis avant de revenir vivre en France.\n" +
+          "Dès mon enfance, j’ai baigné dans la technologie, ce qui m’a rapidement passionné.\n" +
+          "Très tôt, j’ai choisi de m’orienter vers des études d’ingénieur. Dès le lycée, j’ai intégré la voie technologique avec un bac STI2D, ce qui m’a permis de tracer mon chemin vers ma formation actuelle : le cursus PEIP.\n" +
+          "Ce programme est spécialement conçu pour les titulaires d’un bac STI2D et offre la possibilité de rejoindre le cycle ingénieur de Polytech après deux ou trois ans de BUT.\n" +
+          "Aujourd’hui, je suis à la fin de ma première année de BUT.\n" +
+          "A la fin de mon diplôme d’ingénieur je vise un travaille dans la Cyber sécurité ou dans la programmation générale."
+  };
+
+  // Détection des touches
+  const keys = {};
+
+  window.addEventListener('keydown', function(e) {
+    keys[e.key] = true;
+    if (e.key === " ") {
+      checkCollisionAndRedirect();
+    }
+  });
+
+  window.addEventListener('keyup', function(e) {
+    keys[e.key] = false;
+  });
+
+  // Boucle principale du jeu
+  function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  function update() {
+    // Déplacer le joueur avec les touches fléchées
+    if (keys['ArrowRight']) player.x += player.speed;
+    if (keys['ArrowLeft']) player.x -= player.speed;
+    if (keys['ArrowUp']) player.y -= player.speed;
+    if (keys['ArrowDown']) player.y += player.speed;
+
+    // Gestion du "wrap" horizontal (le joueur se déplace de l'autre côté)
+    if (player.x > worldWidth) player.x = 0;
+    if (player.x + player.width < 0) player.x = worldWidth - player.width;
+
+    // Gestion du "wrap" vertical
+    if (player.y > worldHeight) player.y = 0;
+    if (player.y + player.height < 0) player.y = worldHeight - player.height;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Décalage pour centrer le joueur à l'écran
+    const offsetX = canvas.width / 2 - player.x - player.width / 2;
+    const offsetY = canvas.height / 2 - player.y - player.height / 2;
+
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+
+    // Dessiner la zone de texte long (doit être derrière le joueur)
+    ctx.fillStyle = textZone.color;
+    ctx.fillRect(textZone.x, textZone.y, textZone.width, textZone.height);
+
+    // Afficher le texte dans la zone de texte long
+    ctx.fillStyle = 'black';
+    ctx.font = '16px Arial';
+
+    // Division du texte en plusieurs lignes avec un ajustement automatique
+    const lines = wrapText(textZone.text, textZone.width - 20, ctx);
+    lines.forEach((line, index) => {
+      ctx.fillText(line, textZone.x + 10, textZone.y + 30 + index * 25);
+    });
+
+    // Dessiner la zone "Exit" (doit aussi être derrière le joueur)
+    ctx.fillStyle = exitZone.color;
+    ctx.fillRect(exitZone.x, exitZone.y, exitZone.width, exitZone.height);
+
+    // Afficher le texte "Exit" dans la zone "Exit"
+    ctx.fillStyle = 'black';
+    ctx.font = '24px Arial';
+    ctx.fillText(exitZone.text, exitZone.x + 70, exitZone.y + 60);
+
+    // Dessiner le joueur (le carré bleu) **au-dessus de tout**
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+
+    ctx.restore();
+  }
+
+  // Fonction pour ajuster automatiquement le texte dans la zone de texte
+  function wrapText(text, maxWidth, context) {
+    const words = text.split(' ');
+    let lines = [];
+    let currentLine = '';
+
+    for (let i = 0; i < words.length; i++) {
+      const testLine = currentLine + words[i] + ' ';
+      const testWidth = context.measureText(testLine).width;
+
+      if (testWidth > maxWidth && currentLine.length > 0) {
+        lines.push(currentLine);
+        currentLine = words[i] + ' ';
+      } else {
+        currentLine = testLine;
+      }
+    }
+
+    if (currentLine.length > 0) {
+      lines.push(currentLine);
+    }
+
+    return lines;
+  }
+
+  // Vérifie si le joueur se trouve dans la zone d'Exit pour rediriger
+  function checkCollisionAndRedirect() {
+    if (player.x + player.width > exitZone.x && player.x < exitZone.x + exitZone.width &&
+        player.y + player.height > exitZone.y && player.y < exitZone.y + exitZone.height) {
+      window.location.href = exitZone.link; // Redirection vers la page principale
+    }
+  }
+
+  // Lancer la boucle de jeu
+  gameLoop();
+</script>
+
+</body>
+</html>

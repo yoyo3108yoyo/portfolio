@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Mon Portfolio Interactif</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #eef;
+      font-family: Arial, sans-serif;
+    }
+    #gameCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    #instructions {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="instructions">
+  <strong>Contrôles :</strong><br>
+  ➡️ Flèches pour te déplacer<br>
+  🔲 Approche une zone<br>
+  ⬜ Appuie sur "Espace" pour entrer !
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Réduire la taille du monde
+const worldWidth = 2500;
+const worldHeight = 1500;
+const centerX = worldWidth / 2;
+const centerY = worldHeight / 2;
+
+// Joueur
+const player = {
+  x: centerX,
+  y: centerY,
+  width: 40,
+  height: 40,
+  color: 'blue',
+  speed: 7
+};
+
+// Zones interactives
+const zones = [
+  {x: centerX - 600, y: centerY - 200, width: 250, height: 150, color: '#fff', text: "Introduction", link: "introduction.html"},
+  {x: centerX - 300, y: centerY + 300, width: 250, height: 150, color: '#fff', text: "CV", link: "cv.html"},
+  {x: centerX + 300, y: centerY - 400, width: 250, height: 150, color: '#fff', text: "Lettre de Motivation", link: "lettre.html"},
+  {x: centerX + 600, y: centerY + 200, width: 250, height: 150, color: '#fff', text: "Projets", link: "projets.html"},
+  {x: centerX, y: centerY, width: 250, height: 150, color: '#fff', text: "Expérience Pro.", link: "experience.html"}
+];
+
+const keys = {};
+
+window.addEventListener('keydown', function(e) {
+  keys[e.key] = true;
+  if (e.key === " ") {
+    checkCollisionAndRedirect();
+  }
+});
+window.addEventListener('keyup', function(e) {
+  keys[e.key] = false;
+});
+
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+function update() {
+  if (keys['ArrowRight']) player.x += player.speed;
+  if (keys['ArrowLeft']) player.x -= player.speed;
+  if (keys['ArrowUp']) player.y -= player.speed;
+  if (keys['ArrowDown']) player.y += player.speed;
+
+  // Wrap horizontal : Si on dépasse le bord droit, on revient à gauche.
+  if (player.x > worldWidth) {
+    player.x = 0; // On revient à gauche
+  }
+  if (player.x + player.width < 0) {
+    player.x = worldWidth - player.width; // On revient à droite
+  }
+
+  // Wrap vertical : Si on dépasse le bord bas, on revient en haut.
+  if (player.y > worldHeight) {
+    player.y = 0; // On revient en haut
+  }
+  if (player.y + player.height < 0) {
+    player.y = worldHeight - player.height; // On revient en bas
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Décalage pour garder le joueur au centre de l'écran
+  const offsetX = canvas.width / 2 - player.x - player.width / 2;
+  const offsetY = canvas.height / 2 - player.y - player.height / 2;
+
+  ctx.save();
+  ctx.translate(offsetX, offsetY);
+
+  // Dessiner les zones de manière répétée pour couvrir tout le monde
+  const renderZones = (offsetX, offsetY) => {
+    zones.forEach(zone => {
+      ctx.fillStyle = zone.color;
+      ctx.fillRect(zone.x + offsetX, zone.y + offsetY, zone.width, zone.height);
+      ctx.fillStyle = 'black';
+      ctx.font = '18px Arial';
+      ctx.fillText(zone.text, zone.x + offsetX + 10, zone.y + offsetY + 40);
+    });
+  };
+
+  // Dessiner le monde en boucle
+  renderZones(0, 0); // Zones originales
+  renderZones(worldWidth, 0); // Zones à droite
+  renderZones(-worldWidth, 0); // Zones à gauche
+  renderZones(0, worldHeight); // Zones en bas
+  renderZones(0, -worldHeight); // Zones en haut
+
+  // Dessiner le joueur
+  ctx.fillStyle = player.color;
+  ctx.fillRect(player.x, player.y, player.width, player.height);
+
+  ctx.restore();
+}
+
+function checkCollisionAndRedirect() {
+  zones.forEach(zone => {
+    if (player.x < zone.x + zone.width &&
+        player.x + player.width > zone.x &&
+        player.y < zone.y + zone.height &&
+        player.y + player.height > zone.y) {
+      window.location.href = zone.link;
+    }
+  });
+}
+
+// Lancer le jeu
+gameLoop();
+</script>
+
+</body>
+</html>

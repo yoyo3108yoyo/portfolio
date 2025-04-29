@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expérience Professionnelle - Portfolio</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #eef;
+      font-family: Arial, sans-serif;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    #instructions {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="instructions">
+  <strong>Contrôles :</strong><br>
+  ➡️ Flèches pour se déplacer<br>
+  🔲 Appuyer sur "Espace" dans Exit pour revenir à l'accueil.
+</div>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  const player = {
+    x: 400,
+    y: 300,
+    width: 40,
+    height: 40,
+    color: 'blue',
+    speed: 7
+  };
+
+  const exitZone = {
+    x: 700,
+    y: 100,
+    width: 150,
+    height: 80,
+    color: 'lightgreen',
+    text: 'Exit',
+    link: 'index.html'
+  };
+
+  const expZone = {
+    x: 300,
+    y: 250,
+    width: 500,
+    height: 600,
+    color: 'lightyellow',
+    imageSrc: '218569-P170EC-896.jpg' // <-- Mets ici ton image d'expérience pro
+  };
+
+  const keys = {};
+
+  window.addEventListener('keydown', function(e) {
+    keys[e.key] = true;
+    if (e.key === " ") {
+      checkExitCollision();
+    }
+  });
+
+  window.addEventListener('keyup', function(e) {
+    keys[e.key] = false;
+  });
+
+  const expImage = new Image();
+  expImage.src = expZone.imageSrc;
+  expImage.onload = function() {
+    gameLoop();
+  };
+
+  function update() {
+    if (keys['ArrowRight']) player.x += player.speed;
+    if (keys['ArrowLeft']) player.x -= player.speed;
+    if (keys['ArrowUp']) player.y -= player.speed;
+    if (keys['ArrowDown']) player.y += player.speed;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Dessiner la zone Experience Pro
+    ctx.fillStyle = expZone.color;
+    ctx.fillRect(expZone.x, expZone.y, expZone.width, expZone.height);
+
+    // Afficher l'image
+    ctx.drawImage(expImage, expZone.x + 10, expZone.y + 10, expZone.width - 20, expZone.height - 20);
+
+    // Dessiner Exit
+    ctx.fillStyle = exitZone.color;
+    ctx.fillRect(exitZone.x, exitZone.y, exitZone.width, exitZone.height);
+
+    ctx.fillStyle = 'black';
+    ctx.font = '24px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(exitZone.text, exitZone.x + exitZone.width/2, exitZone.y + exitZone.height/2);
+
+    // Dessiner le joueur
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+  }
+
+  function checkExitCollision() {
+    if (player.x + player.width > exitZone.x && player.x < exitZone.x + exitZone.width &&
+        player.y + player.height > exitZone.y && player.y < exitZone.y + exitZone.height) {
+      window.location.href = exitZone.link;
+    }
+  }
+
+  function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+</script>
+
+</body>
+</html>
